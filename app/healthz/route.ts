@@ -10,14 +10,24 @@ export async function GET() {
       process.env.DATABASE_URL;
 
     if (!url) {
-      return NextResponse.json({ ok: false, reason: 'DB URL missing' }, { status: 500 });
+      return NextResponse.json(
+        { ok: false, reason: 'DB URL missing' },
+        { status: 500 },
+      );
     }
 
     const sql = postgres(url, { ssl: 'require' });
     const [{ now }] = await sql`SELECT NOW() as now`;
-    const ext = await sql`SELECT extname FROM pg_extension WHERE extname = 'uuid-ossp'`;
-    return NextResponse.json({ ok: true, now, uuid_ossp_installed: ext.length > 0 });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
+    const ext =
+      await sql`SELECT extname FROM pg_extension WHERE extname = 'uuid-ossp'`;
+
+    return NextResponse.json({
+      ok: true,
+      now,
+      uuid_ossp_installed: ext.length > 0,
+    });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
